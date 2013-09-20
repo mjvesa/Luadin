@@ -12,6 +12,7 @@ import com.vaadin.event.FieldEvents.TextChangeListener;
 import com.vaadin.ui.Button;
 import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.CheckBox;
+import com.vaadin.ui.Component;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.Label;
@@ -22,44 +23,103 @@ import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.VerticalSplitPanel;
 
 public class LiveEditor extends HorizontalSplitPanel {
-    
-    
+
     private static final long serialVersionUID = 6254017255341686040L;
-    
+
+    private AceEditor editor;
+    private VerticalLayout content;
+    private Panel console;
+    private VerticalLayout consoleContent;
+
     private boolean keepRunning;
     private boolean codeHasChanged;
     private int updateDelay;
-
+    private UI ui;
 
     public LiveEditor() {
         updateDelay = 500;
         keepRunning = false;
         codeHasChanged = false;
+        ui = UI.getCurrent();
 
-        final VerticalLayout content = new VerticalLayout();
+        content = new VerticalLayout();
         content.setSizeFull();
 
-        final AceEditor editor = new AceEditor();
-        editor.setMode(AceMode.lua);
-        editor.setTheme(AceTheme.solarized_dark);
-        editor.setSizeFull();
-        editor.addTextChangeListener(new TextChangeListener() {
-            @Override
-            public void textChange(TextChangeEvent event) {
-                codeHasChanged = true;
-            }
-        });
+        VerticalSplitPanel vsp = new VerticalSplitPanel();
+        vsp.setSizeFull();
+        vsp.addComponent(constructEditorInterface());
+        console = createConsole();
+        vsp.addComponent(console);
+        addComponent(vsp);
+        addComponent(content);
+
+        updater.start();
+
+    }
+
+    private Panel createConsole() {
+        Panel p = new Panel();
+        consoleContent = new VerticalLayout();
+        p.setContent(consoleContent);
+        return p;
+    }
+
+    private Component constructEditorInterface() {
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
+        editor = createEditor();
         vl.addComponent(editor);
         vl.setExpandRatio(editor, 1);
-        Panel console = new Panel();
-        final VerticalLayout consoleContent = new VerticalLayout();
-        console.setContent(consoleContent);
+        vl.addComponent(constructButtonRow());
+
+        return vl;
+
+    }
+
+    private Component constructButtonRow() {
         HorizontalLayout hl = new HorizontalLayout();
         hl.setSpacing(true);
+        hl.addComponent(createExecuteButton());
+        hl.addComponent(createClearUIButton());
+        hl.addComponent(createLiveUpdateToggleCheckBox());
+        hl.addComponent(createUpdateTimeTextField());
+        hl.addComponent(new Label("ms"));
+        return hl;
+    }
 
-        hl.addComponent(new Button("Execute", new Button.ClickListener() {
+    private Component createLiveUpdateToggleCheckBox() {
+        CheckBox cb = new CheckBox("Run once per");
+        cb.setImmediate(true);
+        cb.addValueChangeListener(new ValueChangeListener() {
+
+            private static final long serialVersionUID = -114416360494611917L;
+
+            @Override
+            public void valueChange(ValueChangeEvent event) {
+                keepRunning = (Boolean) event.getProperty().getValue();
+
+            }
+        });
+        return cb;
+    }
+
+    private Component createClearUIButton() {
+        return new Button("clear UI", new Button.ClickListener() {
+
+            private static final long serialVersionUID = 4767684729607037873L;
+
+            @Override
+            public void buttonClick(ClickEvent event) {
+                content.removeAllComponents();
+            }
+        });
+
+    }
+
+    private Component createExecuteButton() {
+        return new Button("Execute", new Button.ClickListener() {
+            private static final long serialVersionUID = -7019722617370612697L;
+
             @Override
             public void buttonClick(ClickEvent event) {
                 String source = editor.getValue();
@@ -70,99 +130,83 @@ public class LiveEditor extends HorizontalSplitPanel {
                     consoleContent.addComponent(new Label(e.toString()));
                 }
             }
-        }));
-
-        hl.addComponent(new Button("clear UI", new Button.ClickListener() {
-
-            @Override
-            public void buttonClick(ClickEvent event) {
-                content.removeAllComponents();
-            }
-        }));
-        
-        final UI ui = UI.getCurrent();
-
-        Thread updater = new Thread() {
-
-            @Override
-            public void run() {
-                super.run();
-                while (true) {
-                    try {
-                        sleep(500);
-                        if (keepRunning && codeHasChanged) {
-
-                            ui.access(new Runnable() {
-
-                                @Override
-                                public void run() {
-
-                                    String source = editor.getValue();
-                                    try {
-                                        content.removeAllComponents();
-                                        consoleContent.removeAllComponents();
-                                        LuaRunner.runLuaString(source,
-                                                content);
-                                        ui.push();
-                                        codeHasChanged = false;
-                                    } catch (Exception e) {
-                                        consoleContent
-                                                .addComponent(new Label(e
-                                                        .toString()));
-                                    }
-                                }
-                            });
-
-                        }
-                    } catch (InterruptedException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    }
-
-                }
-            }
-
-        };
-
-        CheckBox cb = new CheckBox("Run once per");
-        cb.setImmediate(true);
-        cb.addValueChangeListener(new ValueChangeListener() {
-
-            @Override
-            public void valueChange(ValueChangeEvent event) {
-                keepRunning = (Boolean) event.getProperty().getValue();
-
-            }
         });
-        hl.addComponent(cb);
-        
+    }
+
+    private Component createUpdateTimeTextField() {
         TextField tf = new TextField();
-        tf.addValueChangeListener( new ValueChangeListener() {
-            
+        tf.addValueChangeListener(new ValueChangeListener() {
+
+            private static final long serialVersionUID = 8983751011414138637L;
+
             @Override
             public void valueChange(ValueChangeEvent event) {
-                updateDelay = Integer.valueOf((String)event.getProperty().getValue());
+                updateDelay = Integer.valueOf((String) event.getProperty()
+                        .getValue());
             }
         });
         tf.setImmediate(true);
         tf.setWidth("5em");
         tf.setValue(updateDelay + "");
-        hl.addComponent(tf);
-        hl.addComponent(new Label("ms"));
-
-        vl.addComponent(hl);
-
-        VerticalSplitPanel vsp = new VerticalSplitPanel();
-        vsp.setSizeFull();
-        vsp.addComponent(vl);
-        vsp.addComponent(console);
-        addComponent(vsp);
-        addComponent(content);
-
-        updater.start();
-
-        
+        return tf;
     }
-    
+
+    private AceEditor createEditor() {
+
+        AceEditor editor = new AceEditor();
+        editor.setMode(AceMode.lua);
+        editor.setTheme(AceTheme.solarized_dark);
+        editor.setSizeFull();
+        editor.addTextChangeListener(new TextChangeListener() {
+            private static final long serialVersionUID = 2606822312690094005L;
+
+            @Override
+            public void textChange(TextChangeEvent event) {
+                codeHasChanged = true;
+            }
+        });
+        return editor;
+    }
+
+    private Thread updater = new Thread() {
+
+        @Override
+        public void run() {
+            super.run();
+            while (true) {
+                try {
+                    sleep(500);
+                    if (keepRunning && codeHasChanged) {
+
+                        ui.access(new Runnable() {
+
+                            @Override
+                            public void run() {
+
+                                String source = editor.getValue();
+                                try {
+                                    content.removeAllComponents();
+                                    consoleContent.removeAllComponents();
+                                    LuaRunner.runLuaString(source, content);
+                                    ui.push();
+                                    codeHasChanged = false;
+                                } catch (Exception e) {
+                                    consoleContent.addComponent(new Label(e
+                                            .toString()));
+                                }
+                            }
+                        });
+
+                    }
+                } catch (InterruptedException e1) {
+                    consoleContent.removeAllComponents();
+                    consoleContent.addComponent(new Label(e1.toString()));
+                }
+
+            }
+        }
+
+    };
+
 
 }
