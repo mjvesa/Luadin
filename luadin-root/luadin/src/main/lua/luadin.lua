@@ -102,7 +102,7 @@ end
 function luadin.ComboBox(caption)
 	local cb = component()
 	cb.componentInstance = luajava.newInstance("com.vaadin.ui.ComboBox", caption)
-	-- TODO
+	-- TODO handle new items and value select
 	return cb
 end
 
@@ -117,8 +117,14 @@ end
 -- Table
 function luadin.Table(caption)
 	local table = component()
-	table.componentInstance = luajava.newInstance("com.vaadin.ui.Table", caption)
+	table.componentInstance = luajava.newInstance("com.vaadin.ui.Table", caption)	
 	
+	function table.setColumnHeaders(columnHeaders)
+		componentInstance:setColumnHeaders(columnHeaders)
+	end
+	function table.setVisibleColumns(visibleColumns)
+		componentInstance:setVisibleColumns(visibleColumns)
+	end
 	return table
 end
 

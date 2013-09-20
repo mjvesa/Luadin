@@ -4,6 +4,7 @@ import com.github.mjvesa.luadin.LuaRunner;
 
 import javax.servlet.annotation.WebServlet;
 
+import org.apache.tools.ant.taskdefs.Property;
 import org.apache.xpath.compiler.PsuedoNames;
 import org.vaadin.aceeditor.AceEditor;
 import org.vaadin.aceeditor.AceMode;
@@ -15,6 +16,8 @@ import com.vaadin.annotations.Title;
 import com.vaadin.annotations.VaadinServletConfiguration;
 import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.data.Property.ValueChangeListener;
+import com.vaadin.event.FieldEvents.TextChangeEvent;
+import com.vaadin.event.FieldEvents.TextChangeListener;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinServlet;
 import com.vaadin.ui.Alignment;
@@ -25,6 +28,7 @@ import com.vaadin.ui.HorizontalSplitPanel;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.TextArea;
+import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Button.ClickEvent;
@@ -37,6 +41,9 @@ import com.vaadin.ui.VerticalSplitPanel;
 public class DemoUI extends UI {
 
     private boolean keepRunning;
+    private boolean codeHasChanged;
+    private int updateDelay;
+    
 
     @WebServlet(value = "/*", asyncSupported = true)
     @VaadinServletConfiguration(productionMode = false, ui = DemoUI.class,
@@ -46,6 +53,10 @@ public class DemoUI extends UI {
 
     @Override
     protected void init(VaadinRequest request) {
+        
+        updateDelay = 500;
+        keepRunning = false;
+        codeHasChanged = false;
 
         HorizontalSplitPanel hsp = new HorizontalSplitPanel();
         final VerticalLayout content = new VerticalLayout();
@@ -55,7 +66,12 @@ public class DemoUI extends UI {
         editor.setMode(AceMode.lua);
         editor.setTheme(AceTheme.solarized_dark);
         editor.setSizeFull();
-        editor.setValue("args = ... \n\nfunction init(ui)\nend\n\ninit(args)");
+        editor.addTextChangeListener(new TextChangeListener() {
+            @Override
+            public void textChange(TextChangeEvent event) {
+                codeHasChanged = true;
+            }
+        });
         VerticalLayout vl = new VerticalLayout();
         vl.setSizeFull();
         vl.addComponent(editor);
@@ -64,6 +80,7 @@ public class DemoUI extends UI {
         final VerticalLayout consoleContent = new VerticalLayout();
         console.setContent(consoleContent);
         HorizontalLayout hl = new HorizontalLayout();
+        hl.setSpacing(true);
 
         hl.addComponent(new Button("Execute", new Button.ClickListener() {
             @Override
@@ -90,12 +107,11 @@ public class DemoUI extends UI {
 
             @Override
             public void run() {
-                // TODO Auto-generated method stub
                 super.run();
                 while (true) {
                     try {
                         sleep(500);
-                        if (keepRunning) {
+                        if (keepRunning && codeHasChanged) {
 
                             access(new Runnable() {
 
@@ -109,6 +125,7 @@ public class DemoUI extends UI {
                                         LuaRunner.runLuaString(source,
                                                 content);
                                         push();
+                                        codeHasChanged = false;
                                     } catch (Exception e) {
                                         consoleContent
                                                 .addComponent(new Label(e
@@ -128,7 +145,7 @@ public class DemoUI extends UI {
 
         };
 
-        CheckBox cb = new CheckBox("Run once per second");
+        CheckBox cb = new CheckBox("Run once per");
         cb.setImmediate(true);
         cb.addValueChangeListener(new ValueChangeListener() {
 
@@ -139,6 +156,20 @@ public class DemoUI extends UI {
             }
         });
         hl.addComponent(cb);
+        
+        TextField tf = new TextField();
+        tf.addValueChangeListener( new ValueChangeListener() {
+            
+            @Override
+            public void valueChange(ValueChangeEvent event) {
+                updateDelay = Integer.valueOf((String)event.getProperty().getValue());
+            }
+        });
+        tf.setImmediate(true);
+        tf.setWidth("5em");
+        tf.setValue(updateDelay + "");
+        hl.addComponent(tf);
+        hl.addComponent(new Label("ms"));
 
         vl.addComponent(hl);
 
