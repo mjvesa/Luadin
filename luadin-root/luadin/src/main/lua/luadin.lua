@@ -56,14 +56,15 @@ local function AbstractTextField()
 	local atf = component()
 	atf.componentInstance = luajava.newInstance("com.vaadin.ui.Label", "Do not use AbstractTextField")
 	function atf.getValue()
-		componentInstance:getValue()
+		atf.componentInstance:getValue()
 	end
 	function atf.addTextChangeListener(listener)
-		local listener = luajava.createProxy("com.vaadin.data.Property$ValueChangeListener", {
-			valueChange = function(prop)
-				listener(prop:getValue())
+		local tcl = luajava.createProxy("com.vaadin.event.FieldEvents$TextChangeListener", {
+			texthange = function(event)
+				listener(event:getText())
 			end
 		})
+		atf.componentInstance:addTextChangeListener(tcl);
 	end
 	return atf
 end
@@ -80,6 +81,20 @@ function luadin.TextArea(caption)
 	local ta = AbstractTextField(caption)
 	ta.componentInstance = luajava.newInstance("com.vaadin.ui.TextArea", caption)
 	return ta
+end
+
+
+local function AbstractField()
+	local af = component()
+	function af.addValueChangeListener(listener)
+		local vcl = luajava.createProxy("com.vaadin.data.Property$ValueChangeListener", {
+			valueChange = function(prop)
+				listener(prop:getValue())
+			end
+		})
+		af.componentIstance:addValueChangeListener(vcl)
+	end
+	return af
 end
 
 -- CheckBox
@@ -120,11 +135,16 @@ function luadin.Table(caption)
 	table.componentInstance = luajava.newInstance("com.vaadin.ui.Table", caption)	
 	
 	function table.setColumnHeaders(columnHeaders)
-		componentInstance:setColumnHeaders(columnHeaders)
+		table.componentInstance:setColumnHeaders(columnHeaders)
 	end
 	function table.setVisibleColumns(visibleColumns)
-		componentInstance:setVisibleColumns(visibleColumns)
+		table.componentInstance:setVisibleColumns(visibleColumns)
 	end
+	
+	function table.setContainerDataSource(container)
+		table.componentInstance:setContainerDataSource(container.getContainerInstance())
+	end
+	
 	return table
 end
 
@@ -187,5 +207,26 @@ function luadin.GridLayout(cols, rows)
 	gl.containerInstance = luajava.newInstance("com.vaadin.ui.GridLayout", cols, rows)
 	return gl
 end
+
+------------
+-- Container
+------------
+
+function luadin.Container(propertyNames) 
+	c = {}
+	c.containerInstance = luajava.newInstance("com.vaadin.data.util.IndexedContainer")
+	o = luajava.bindClass("java.lang.Object")
+	for _, name in ipairs(propertyNames) do
+		 c.containerInstance:addContainerProperty(name, o, nil)
+	end
+	
+	function c.getContainerInstance()
+		return c.containerInstance
+	end
+	
+	return c
+end
+
+
 
 return luadin
