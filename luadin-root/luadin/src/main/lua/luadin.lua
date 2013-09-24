@@ -208,10 +208,26 @@ function luadin.GridLayout(cols, rows)
 	return gl
 end
 
+
+------
+--Item
+------
+function luadin.Item(nativeItem)
+	item = {}
+	item.item = nativeItem
+	function item.getPropertyValue(prop)
+		return item.item:getItemProperty(prop):getValue()
+	end
+	function item.setPropertyValue(prop, value)
+		local p = item.item:getItemProperty(prop)
+		p:setValue(value)
+	end
+	return item 
+end 
+
 ------------
 -- Container
 ------------
-
 function luadin.Container(propertyNames) 
 	c = {}
 	c.containerInstance = luajava.newInstance("com.vaadin.data.util.IndexedContainer")
@@ -224,7 +240,27 @@ function luadin.Container(propertyNames)
 		return c.containerInstance
 	end
 	
+	function c.getItem(id)
+		return luadin.Item(c.containerInstance:getItem(id))
+	end
+	
+	function c.addItem()
+		local id = c.containerInstance:addItem();
+		return luadin.Item(c.containerInstance:getItem(id))
+	end
+	
+	function c.addItemWithValues(values)
+		local item = c.addItem()
+		for k, v in pairs(values) do
+			print ("key " .. k)
+			print ("value " .. v)
+			item.setPropertyValue(k, v)
+		end
+		return item 
+	end
+	
 	return c
+	
 end
 
 
