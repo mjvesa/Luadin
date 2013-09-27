@@ -106,6 +106,9 @@ public class LuaString extends LuaValue {
 	 * @return {@link LuaString} with UTF8 bytes corresponding to the supplied String
 	 */
 	public static LuaString valueOf(String string) {
+	        if (string == null) {
+	            System.out.println("nulllii");
+	        }
 		char[] c = string.toCharArray();
 		byte[] b = new byte[lengthAsUtf8(c)];
 		encodeToUtf8(c, b, 0);

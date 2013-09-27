@@ -1,4 +1,8 @@
+---
 -- Luadin - Vaadin API wrapper for Lua
+-- 
+-- @author Matti Vesa
+-- 
 local luadin = {}
 
 -------------------
@@ -27,13 +31,7 @@ function luadin.Button(caption)
 	function button.addClickListener(clickListener)
 		local listener = luajava.createProxy("com.vaadin.ui.Button$ClickListener", {
 			buttonClick = function (event)
-				print "Click took place"
 				clickListener()
-			end,
-			hashCode = function()
-				-- TODO does this really call Object.hashCode for this interface?
-				o = luajava.bindClass("java.lang.Object")
-				return o:hashCode()
 			end
 		})
 		button.componentInstance:addClickListener(listener)
@@ -49,17 +47,16 @@ function luadin.Label(caption)
 	return label
 end
 
--- Base of all fields
+-- Base object of all fields
 local function AbstractField(af)
 	function af.addValueChangeListener(listener)
 		local vcl = luajava.createProxy("com.vaadin.data.Property$ValueChangeListener", {
-			valueChange = function(prop)
-				listener(prop:getValue())
+			valueChange = function(event)
+				listener(event:getProperty():getValue())
 			end
 		})		
-		af.componentIstance:addValueChangeListener(vcl)
+		af.componentInstance:addValueChangeListener(vcl)
 	end
-	return af
 end
 
 -- Base object of TextField and TextArea
@@ -80,7 +77,7 @@ end
 
 -- TextField
 function luadin.TextField(caption)
-	tf = component()
+	local tf = component()
 	tf.componentInstance = luajava.newInstance("com.vaadin.ui.TextField")
 	AbstractField(tf)
 	AbstractTextField(tf)
@@ -91,7 +88,7 @@ end
 function luadin.TextArea(caption)
 	local ta = component()
 	ta.componentInstance = luajava.newInstance("com.vaadin.ui.TextArea")
-	AbstractField(tf)
+	AbstractField(ta)
 	AbstractTextField(ta)
 	return ta
 end
@@ -102,7 +99,7 @@ end
 function luadin.CheckBox(caption)
 	local cb = component()
 	cb.componentInstance = luajava.newInstance("com.vaadin.ui.CheckBox", caption)
-	AbstractField(af)
+	AbstractField(cb)
 	return cb
 end
 
