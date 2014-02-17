@@ -1,8 +1,8 @@
 ---
 -- Luadin - Vaadin API wrapper for Lua
--- 
+--
 -- @author Matti Vesa
--- 
+--
 local luadin = {}
 
 -------------------
@@ -44,8 +44,21 @@ end
 function luadin.Label(caption)
 	local label = component()
 	label.componentInstance = luajava.newInstance("com.vaadin.ui.Label", caption)
+
+	function label.setValue(value)
+		label.componentInstance:setValue(value)
+	end
+	
+	function label.hassu()
+		print("on hassu")
+	end
+
 	return label
 end
+
+---------
+-- Fields
+---------
 
 -- Base object of all fields
 local function AbstractField(af)
@@ -54,16 +67,16 @@ local function AbstractField(af)
 			valueChange = function(event)
 				listener(event:getProperty():getValue())
 			end
-		})		
+		})
 		af.componentInstance:addValueChangeListener(vcl)
+	end
+	function af.getValue()
+		return af.componentInstance:getValue()
 	end
 end
 
 -- Base object of TextField and TextArea
 local function AbstractTextField(atf)
-	function atf.getValue()
-		atf.componentInstance:getValue()
-	end
 	function atf.addTextChangeListener(listener)
 		local tcl = luajava.createProxy("com.vaadin.event.FieldEvents$TextChangeListener", {
 			textChange = function(event)

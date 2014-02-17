@@ -5,8 +5,8 @@
 	<groupId>com.github.mjvesa</groupId>
 	<artifactId>luadin</artifactId>
 	<packaging>jar</packaging>
-	<version>0.1.0-SNAPSHOT</version>
-	<name>Luadin Add-on</name>
+	<version>0.1.0-EXPERIMENTAL</version>
+	<name>Luadin</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
