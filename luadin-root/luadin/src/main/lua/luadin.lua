@@ -61,7 +61,7 @@ end
 ---------
 
 -- Base object of all fields
-local function AbstractField(af)
+local function Field(af)
 	function af.addValueChangeListener(listener)
 		local vcl = luajava.createProxy("com.vaadin.data.Property$ValueChangeListener", {
 			valueChange = function(event)
@@ -76,15 +76,15 @@ local function AbstractField(af)
 end
 
 -- Base object of TextField and TextArea
-local function AbstractTextField(atf)
-	function atf.addTextChangeListener(listener)
+local function BaseTextField(btf)
+	function btf.addTextChangeListener(listener)
 		local tcl = luajava.createProxy("com.vaadin.event.FieldEvents$TextChangeListener", {
 			textChange = function(event)
 				listener(event:getText())
 			end
 		})
 		print(tcl)
-		atf.componentInstance:addTextChangeListener(tcl)
+		btf.componentInstance:addTextChangeListener(tcl)
 	end
 end
 
@@ -92,8 +92,8 @@ end
 function luadin.TextField(caption)
 	local tf = component()
 	tf.componentInstance = luajava.newInstance("com.vaadin.ui.TextField")
-	AbstractField(tf)
-	AbstractTextField(tf)
+	Field(tf)
+	BaseTextField(tf)
 	return tf
 end
 
@@ -101,8 +101,8 @@ end
 function luadin.TextArea(caption)
 	local ta = component()
 	ta.componentInstance = luajava.newInstance("com.vaadin.ui.TextArea")
-	AbstractField(ta)
-	AbstractTextField(ta)
+	Field(ta)
+	BaseTextField(ta)
 	return ta
 end
 
@@ -112,15 +112,26 @@ end
 function luadin.CheckBox(caption)
 	local cb = component()
 	cb.componentInstance = luajava.newInstance("com.vaadin.ui.CheckBox", caption)
-	AbstractField(cb)
+	Field(cb)
 	return cb
+end
+
+
+--------------------
+-- Select components
+--------------------
+function Select(as)
+	function as.addItem(item)
+		return as.componentInstance:addItem(item)
+	end
 end
 
 -- OptionGroup
 function luadin.OptionGroup(caption)
 	local og = component()
 	og.componentInstance = luajava.newInstance("com.vaadin.ui.OptionGroup", caption)
-	AbstractField(og)
+	Field(og)
+	Select(og)
 	return og
 end
 
@@ -128,7 +139,8 @@ end
 function luadin.ComboBox(caption)
 	local cb = component()
 	cb.componentInstance = luajava.newInstance("com.vaadin.ui.ComboBox", caption)
-	AbstractField(cb)
+	Field(cb)
+	Select(cb)
 	return cb
 end
 
@@ -136,11 +148,14 @@ end
 function luadin.ListSelect(caption)
 	local ls = component()
 	ls.componentInstance = luajava.newInstance("com.vaadin.ui.ListSelect", caption)
-	AbstractField(ls)
+	Field(ls)
+	Select(ls)
 	return ls
 end
 
+--------
 -- Table
+--------
 function luadin.Table(caption)
 	local table = component()
 	table.componentInstance = luajava.newInstance("com.vaadin.ui.Table", caption)
