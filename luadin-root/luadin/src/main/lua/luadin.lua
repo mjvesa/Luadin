@@ -14,8 +14,16 @@ local function component()
 	-- This must be changed for each component
 	comp.componentInstance = luajava.newInstance("com.vaadin.ui.Label", "Unimplemented component")
 
-	function comp.getComponentInstance()
-		return comp.componentInstance
+	function comp.setStyleName(name)
+		comp.componentInstance:setStyleName(name)
+	end
+	
+	function comp.addStyleName(name)
+		comp.componentInstance:addStyleName(name)
+	end
+	
+	function comp.setVisible(visible)
+		comp.componentInstance:setVisible(name)
 	end
 
 	return comp
@@ -175,9 +183,9 @@ function luadin.Table(caption)
 end
 
 
------------
--- Tabsheet
------------
+-------------------------
+-- Tabsheet and Accordion
+-------------------------
 
 
 ------------------------
@@ -191,12 +199,8 @@ local function componentContainer()
 		return cc.containerInstance
 	end
 
-	function cc.getComponentInstance()
-		return cc.containerInstance
-	end
-
 	function cc.addComponent(component)
-		cc.containerInstance:addComponent(component.getComponentInstance())
+		cc.containerInstance:addComponent(component.componentInstance)
 	end
 
 	function setMargin(margin)
@@ -233,6 +237,10 @@ function luadin.GridLayout(cols, rows)
 	gl.containerInstance = luajava.newInstance("com.vaadin.ui.GridLayout", cols, rows)
 	return gl
 end
+
+
+
+-- TODO splitpanels
 
 
 ------
@@ -285,7 +293,6 @@ function luadin.Container(propertyNames)
 
 	return c
 end
-
 
 
 return luadin
